@@ -1,0 +1,237 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Bancada atual — sensores e LED",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": ".archify/workflow-bancada-led-20261101-120000/bancada-led.html"
+  },
+  "lanes": [
+    {
+      "id": "hardware",
+      "label": "Sensores identificados pelo usuario"
+    },
+    {
+      "id": "software",
+      "label": "Observacao atual e preparacao do diagnostico"
+    },
+    {
+      "id": "outputs",
+      "label": "Teste preparado — ainda nao gravado"
+    }
+  ],
+  "mainPath": [
+    "observe",
+    "record",
+    "preserve",
+    "prepare"
+  ],
+  "nodes": [
+    {
+      "id": "usb",
+      "lane": "hardware",
+      "col": 0,
+      "type": "external",
+      "label": "Bancada USB",
+      "sublabel": "Bombas desconectadas",
+      "width": 172
+    },
+    {
+      "id": "soil",
+      "lane": "hardware",
+      "col": 1,
+      "type": "external",
+      "label": "Solo A / B / C",
+      "sublabel": "GPIO33 / 32 / 34",
+      "width": 172
+    },
+    {
+      "id": "sensors",
+      "lane": "hardware",
+      "col": 2,
+      "type": "external",
+      "label": "DHT22 / HX711",
+      "sublabel": "18; DOUT5 / SCK4",
+      "width": 172
+    },
+    {
+      "id": "ina",
+      "lane": "hardware",
+      "col": 3,
+      "type": "external",
+      "label": "INA3221",
+      "sublabel": "SDA21 / SCL22; 0x40",
+      "width": 172
+    },
+    {
+      "id": "observe",
+      "lane": "software",
+      "col": 0,
+      "type": "frontend",
+      "label": "Sketch atual",
+      "sublabel": "Pagina de sensores",
+      "width": 172
+    },
+    {
+      "id": "record",
+      "lane": "software",
+      "col": 1,
+      "type": "database",
+      "label": "Registro local",
+      "sublabel": "Diagnostico; sem ensaio",
+      "width": 172
+    },
+    {
+      "id": "preserve",
+      "lane": "software",
+      "col": 2,
+      "type": "security",
+      "label": "Preservar programa",
+      "sublabel": "Flash + fator; pendente",
+      "width": 172
+    },
+    {
+      "id": "prepare",
+      "lane": "software",
+      "col": 3,
+      "type": "backend",
+      "label": "Compilar LED",
+      "sublabel": "Sketch isolado; pendente",
+      "width": 172
+    },
+    {
+      "id": "arm",
+      "lane": "outputs",
+      "col": 0,
+      "type": "security",
+      "label": "LED_ONLY",
+      "sublabel": "Sessao manual de 60 s",
+      "width": 172
+    },
+    {
+      "id": "pulse",
+      "lane": "outputs",
+      "col": 1,
+      "type": "backend",
+      "label": "Pulso individual",
+      "sublabel": "GPIO25 / 26 / 27; 1 s",
+      "width": 172
+    },
+    {
+      "id": "load",
+      "lane": "outputs",
+      "col": 2,
+      "type": "external",
+      "label": "BD135 + LED",
+      "sublabel": "Um borne; mapear GPIO",
+      "width": 172
+    },
+    {
+      "id": "stop",
+      "lane": "outputs",
+      "col": 3,
+      "type": "security",
+      "label": "Saidas LOW",
+      "sublabel": "OFF / expiracao",
+      "width": 172
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-usb-soil",
+      "from": "usb",
+      "to": "soil",
+      "variant": "default"
+    },
+    {
+      "id": "e-soil-sensors",
+      "from": "soil",
+      "to": "sensors",
+      "variant": "default"
+    },
+    {
+      "id": "e-sensors-ina",
+      "from": "sensors",
+      "to": "ina",
+      "variant": "default"
+    },
+    {
+      "id": "e-usb-observe",
+      "from": "usb",
+      "to": "observe",
+      "variant": "default"
+    },
+    {
+      "id": "e-observe-record",
+      "from": "observe",
+      "to": "record",
+      "variant": "default"
+    },
+    {
+      "id": "e-record-preserve",
+      "from": "record",
+      "to": "preserve",
+      "variant": "default"
+    },
+    {
+      "id": "e-preserve-prepare",
+      "from": "preserve",
+      "to": "prepare",
+      "variant": "default"
+    },
+    {
+      "id": "e-prepare-arm",
+      "from": "prepare",
+      "to": "arm",
+      "variant": "default"
+    },
+    {
+      "id": "e-arm-pulse",
+      "from": "arm",
+      "to": "pulse",
+      "variant": "default"
+    },
+    {
+      "id": "e-pulse-load",
+      "from": "pulse",
+      "to": "load",
+      "variant": "default"
+    },
+    {
+      "id": "e-load-stop",
+      "from": "load",
+      "to": "stop",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Limites",
+      "items": [
+        "LED nao comprova capacidade de acionar motor",
+        "LOW nao e polaridade de motor validada",
+        "Fonte, protecao e calibracao pendentes"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Ensaio final separado",
+      "items": [
+        "T1/T2/T3 ainda sem associacao fisica definitiva",
+        "Tres vasos / 30 dias apos preparacao",
+        "Diagnostico nao conta como ensaio de irrigacao"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Pesagem corrigida",
+      "items": [
+        "4 sensores de tres fios / 1 HX711",
+        "Conjunto em E+ / E- / A- / A+",
+        "Capacidade e ligacao da ponte nao validadas"
+      ]
+    }
+  ]
+}

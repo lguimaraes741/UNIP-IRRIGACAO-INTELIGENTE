@@ -1,0 +1,465 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Ensaio contínuo — 3 vasos / 30 dias",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": ".archify/workflow-ensaio-continuo-20261012-210000/ensaio-continuo.html",
+    "repository": {
+      "url": "https://github.com/Danizrod/UNIP.IRRIGACAO_INTELIGENTE.git",
+      "revision": "2c8e27f8d3b949b023e04dbe1e0d251629eb352d"
+    },
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "frontend": {
+          "label": "Painel"
+        },
+        "backend": {
+          "label": "Software / controle"
+        },
+        "security": {
+          "label": "Proteções"
+        },
+        "messagebus": {
+          "label": "Transporte / fila"
+        },
+        "database": {
+          "label": "Armazenamento"
+        },
+        "external": {
+          "label": "Bancada / instrumentos"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "reading",
+      "label": "Aquisição e contingência"
+    },
+    {
+      "id": "decision",
+      "label": "Notebook: decisão e fila"
+    },
+    {
+      "id": "execution",
+      "label": "ESP32: execução e medição"
+    },
+    {
+      "id": "records",
+      "label": "Persistência e análise"
+    }
+  ],
+  "mainPath": [
+    "ingest",
+    "policy",
+    "queue",
+    "guards",
+    "initial",
+    "pump",
+    "settle",
+    "store"
+  ],
+  "nodes": [
+    {
+      "id": "soil",
+      "lane": "reading",
+      "col": 0,
+      "type": "external",
+      "label": "Três vasos",
+      "sublabel": "Solo por unidade",
+      "width": 166,
+      "sources": [
+        {
+          "path": "docs/protocolo-testes.md",
+          "line": 7,
+          "end_line": 27
+        }
+      ],
+      "tag": "Físico pendente"
+    },
+    {
+      "id": "mqtt",
+      "lane": "reading",
+      "col": 1,
+      "type": "messagebus",
+      "label": "MQTT / TLS",
+      "sublabel": "Identidade e calibração",
+      "width": 166,
+      "sources": [
+        {
+          "path": "backend/app/worker.py",
+          "line": 1,
+          "end_line": 62
+        }
+      ]
+    },
+    {
+      "id": "ingest",
+      "lane": "decision",
+      "col": 0,
+      "type": "backend",
+      "label": "Validar / persistir",
+      "sublabel": "Telemetria no PostgreSQL",
+      "width": 166,
+      "sources": [
+        {
+          "path": "backend/app/worker.py",
+          "line": 1,
+          "end_line": 60
+        }
+      ]
+    },
+    {
+      "id": "policy",
+      "lane": "decision",
+      "col": 1,
+      "type": "backend",
+      "label": "T1 / T2 / T3",
+      "sublabel": "Decisões por vaso",
+      "width": 166,
+      "sources": [
+        {
+          "path": "backend/app/control.py",
+          "line": 6,
+          "end_line": 43
+        }
+      ]
+    },
+    {
+      "id": "queue",
+      "lane": "decision",
+      "col": 2,
+      "type": "messagebus",
+      "label": "Fila global",
+      "sublabel": "Uma atuação por ESP32",
+      "width": 166,
+      "sources": [
+        {
+          "path": "backend/app/dispatcher.py",
+          "line": 12,
+          "end_line": 49
+        }
+      ]
+    },
+    {
+      "id": "guards",
+      "lane": "decision",
+      "col": 3,
+      "type": "security",
+      "label": "Validar ciclo",
+      "sublabel": "Prazo, água e limites",
+      "width": 166,
+      "sources": [
+        {
+          "path": "firmware/core/controller.hpp",
+          "line": 41,
+          "end_line": 75
+        }
+      ]
+    },
+    {
+      "id": "initial",
+      "lane": "execution",
+      "col": 3,
+      "type": "backend",
+      "label": "Massa inicial",
+      "sublabel": "Calibração física pendente",
+      "width": 166,
+      "sources": [
+        {
+          "path": "docs/protocolo-testes.md",
+          "line": 34,
+          "end_line": 44
+        }
+      ],
+      "tag": "Calibração pendente"
+    },
+    {
+      "id": "pump",
+      "lane": "execution",
+      "col": 4,
+      "type": "backend",
+      "label": "Uma bomba",
+      "sublabel": "Driver físico pendente",
+      "width": 166,
+      "sources": [
+        {
+          "path": "firmware/core/shared_rig.hpp",
+          "line": 14,
+          "end_line": 73
+        }
+      ]
+    },
+    {
+      "id": "settle",
+      "lane": "execution",
+      "col": 5,
+      "type": "backend",
+      "label": "Desligar / pesar",
+      "sublabel": "Pesagem física pendente",
+      "width": 166,
+      "sources": [
+        {
+          "path": "docs/protocolo-testes.md",
+          "line": 34,
+          "end_line": 44
+        }
+      ],
+      "tag": "Medição física pendente"
+    },
+    {
+      "id": "store",
+      "lane": "records",
+      "col": 5,
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "Resultado e qualidade",
+      "width": 166,
+      "sources": [
+        {
+          "path": "backend/app/store.py",
+          "line": 94,
+          "end_line": 155
+        }
+      ]
+    },
+    {
+      "id": "grafana",
+      "lane": "records",
+      "col": 4,
+      "type": "frontend",
+      "label": "Grafana",
+      "sublabel": "Visualização central",
+      "width": 166,
+      "sources": [
+        {
+          "path": "infra/grafana/provisioning/dashboards/ingestion.json",
+          "line": 1,
+          "end_line": 17
+        }
+      ]
+    },
+    {
+      "id": "analysis",
+      "lane": "records",
+      "col": 3,
+      "type": "backend",
+      "label": "30 dias / quinzenas",
+      "sublabel": "Descritivo; n=1 por modo",
+      "width": 166,
+      "sources": [
+        {
+          "path": "tools/experiment_analysis.py",
+          "line": 15,
+          "end_line": 94
+        }
+      ]
+    },
+    {
+      "id": "fallback",
+      "lane": "reading",
+      "col": 3,
+      "type": "backend",
+      "label": "Contingência",
+      "sublabel": "Histerese em rodízio",
+      "width": 166,
+      "sources": [
+        {
+          "path": "firmware/core/shared_rig.hpp",
+          "line": 14,
+          "end_line": 73
+        }
+      ]
+    },
+    {
+      "id": "blocked",
+      "lane": "reading",
+      "col": 4,
+      "type": "security",
+      "label": "Bloquear / registrar",
+      "sublabel": "Sem atuação insegura",
+      "width": 166,
+      "sources": [
+        {
+          "path": "firmware/core/controller.hpp",
+          "line": 41,
+          "end_line": 75
+        }
+      ]
+    },
+    {
+      "id": "resources",
+      "lane": "execution",
+      "col": 2,
+      "type": "external",
+      "label": "Medidores comuns",
+      "sublabel": "Reservatório / HX711 / INA",
+      "width": 166,
+      "sources": [
+        {
+          "path": "docs/materiais-tcc.md",
+          "line": 11,
+          "end_line": 35
+        }
+      ]
+    },
+    {
+      "id": "training",
+      "lane": "reading",
+      "col": 2,
+      "type": "backend",
+      "label": "Modelo T3",
+      "sublabel": "Treino antes do ensaio",
+      "width": 166,
+      "sources": [
+        {
+          "path": "docs/protocolo-testes.md",
+          "line": 20,
+          "end_line": 29
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "step0",
+      "to": "mqtt",
+      "variant": "default",
+      "role": "main",
+      "from": "soil"
+    },
+    {
+      "id": "step1",
+      "to": "ingest",
+      "variant": "default",
+      "role": "branch",
+      "from": "mqtt"
+    },
+    {
+      "id": "step2",
+      "to": "policy",
+      "variant": "default",
+      "role": "main",
+      "from": "ingest"
+    },
+    {
+      "id": "step3",
+      "to": "queue",
+      "variant": "default",
+      "role": "main",
+      "from": "policy"
+    },
+    {
+      "id": "step4",
+      "to": "guards",
+      "variant": "default",
+      "role": "main",
+      "from": "queue"
+    },
+    {
+      "id": "step5",
+      "to": "initial",
+      "variant": "default",
+      "role": "main",
+      "from": "guards"
+    },
+    {
+      "id": "step6",
+      "to": "pump",
+      "variant": "default",
+      "role": "main",
+      "from": "initial"
+    },
+    {
+      "id": "step7",
+      "to": "settle",
+      "variant": "default",
+      "role": "main",
+      "from": "pump"
+    },
+    {
+      "id": "step8",
+      "to": "store",
+      "variant": "default",
+      "role": "main",
+      "from": "settle"
+    },
+    {
+      "id": "step9",
+      "to": "grafana",
+      "variant": "default",
+      "role": "branch",
+      "from": "store"
+    },
+    {
+      "id": "step10",
+      "to": "analysis",
+      "variant": "default",
+      "role": "branch",
+      "from": "grafana"
+    },
+    {
+      "id": "local",
+      "from": "fallback",
+      "to": "guards",
+      "label": "Mesmos limites",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "bad",
+      "from": "guards",
+      "to": "blocked",
+      "label": "Inválido",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "instrument",
+      "from": "resources",
+      "to": "initial",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "predict",
+      "from": "training",
+      "to": "policy",
+      "label": "Só T3",
+      "variant": "dashed",
+      "role": "branch"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Tratamentos fixos",
+      "items": [
+        "T1: intervalo e dose definidos no piloto.",
+        "T2: limiares com histerese calibrada.",
+        "T3: previsão de seis horas e regras determinísticas."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Continuidade e custo",
+      "items": [
+        "Um ESP32, três vasos; orçamento sem ampliação.",
+        "Próximo ciclo exige confirmação terminal e estabilização.",
+        "Falhas e reposições registradas; ausência não vira zero."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Alcance das evidências",
+      "items": [
+        "Software e medições sintéticas: testes de integração.",
+        "Drivers, montagem e calibração física pendentes.",
+        "30 dias contínuos; quinzenas não são réplicas."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+apiVersion: 1
+datasources:
+  - name: Irrigacao
+    uid: irrigation-postgres
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    user: grafana_reader
+    secureJsonData:
+      password: $GRAFANA_DB_PASSWORD
+    jsonData:
+      database: irrigation
+      sslmode: disable
+      postgresVersion: 1700
+      timescaledb: false
+    isDefault: true

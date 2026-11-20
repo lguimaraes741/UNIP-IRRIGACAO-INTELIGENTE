@@ -1,0 +1,523 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "MVP de irrigação — fluxo esperado",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": ".archify/workflow-fluxo-mvp-20261012-162340/fluxo-mvp.html"
+  },
+  "components": [
+    {
+      "id": "sensors",
+      "type": "external",
+      "label": "Solo e ambiente",
+      "sublabel": "Sensor de solo + DHT22",
+      "pos": [
+        160,
+        80
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "esp",
+      "type": "backend",
+      "label": "Coletar no ESP32",
+      "sublabel": "ID, horário, calibração",
+      "pos": [
+        160,
+        220
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "mqttIn",
+      "type": "messagebus",
+      "label": "Enviar por MQTT",
+      "sublabel": "TLS + autenticação",
+      "pos": [
+        160,
+        360
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "ingest",
+      "type": "security",
+      "label": "Validar no backend",
+      "sublabel": "Payload + duplicatas",
+      "pos": [
+        160,
+        500
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "readings",
+      "type": "database",
+      "label": "Salvar leituras",
+      "sublabel": "PostgreSQL",
+      "pos": [
+        160,
+        640
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "predict",
+      "type": "backend",
+      "label": "Prever em T3",
+      "sublabel": "Modelo versionado; 6 h",
+      "pos": [
+        160,
+        780
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "decision",
+      "type": "backend",
+      "label": "Decidir irrigação",
+      "sublabel": "Regras e dados válidos",
+      "pos": [
+        160,
+        920
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "command",
+      "type": "backend",
+      "label": "Comandar se necessário",
+      "sublabel": "ID, validade e limites",
+      "pos": [
+        160,
+        1060
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "mqttOut",
+      "type": "messagebus",
+      "label": "Enviar comando",
+      "sublabel": "Backend → MQTT → ESP32",
+      "pos": [
+        160,
+        1200
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "gate",
+      "type": "security",
+      "label": "Validar no ESP32",
+      "sublabel": "Água, leitura e limites",
+      "tag": "Aceitar ou rejeitar; confirmar",
+      "pos": [
+        160,
+        1340
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "pump",
+      "type": "external",
+      "label": "Irrigar se aceito",
+      "sublabel": "MOSFET + bomba",
+      "tag": "Confirmar início e conclusão",
+      "pos": [
+        160,
+        1480
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "measure",
+      "type": "backend",
+      "label": "Medir o ciclo",
+      "sublabel": "Pesagem + V × I no tempo",
+      "pos": [
+        160,
+        1620
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "records",
+      "type": "database",
+      "label": "Registrar resultado",
+      "sublabel": "MQTT: eventos + medições",
+      "pos": [
+        160,
+        1760
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "dashboard",
+      "type": "frontend",
+      "label": "Exibir no Grafana",
+      "sublabel": "Histórico e estado",
+      "pos": [
+        160,
+        1900
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "blocked",
+      "type": "security",
+      "label": "Bloquear atuação",
+      "sublabel": "Rejeitado, vencido, inválido",
+      "pos": [
+        600,
+        1340
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "wait",
+      "type": "backend",
+      "label": "Não irrigar",
+      "sublabel": "Aguardar próxima leitura",
+      "pos": [
+        600,
+        920
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "buffer",
+      "type": "database",
+      "label": "Guardar telemetria",
+      "sublabel": "Buffer local limitado",
+      "pos": [
+        600,
+        360
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "fallback",
+      "type": "backend",
+      "label": "Histerese local",
+      "sublabel": "Só com água e dados válidos",
+      "pos": [
+        950,
+        360
+      ],
+      "size": [
+        240,
+        80
+      ]
+    },
+    {
+      "id": "resume",
+      "type": "security",
+      "label": "Retomar sincronizado",
+      "sublabel": "Reenviar; sem comando antigo",
+      "pos": [
+        600,
+        500
+      ],
+      "size": [
+        240,
+        80
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "sensors-esp",
+      "from": "sensors",
+      "to": "esp",
+      "label": "",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "esp-mqttIn",
+      "from": "esp",
+      "to": "mqttIn",
+      "label": "",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "mqttIn-ingest",
+      "from": "mqttIn",
+      "to": "ingest",
+      "label": "",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "ingest-readings",
+      "from": "ingest",
+      "to": "readings",
+      "label": "",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "readings-predict",
+      "from": "readings",
+      "to": "predict",
+      "label": "",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "predict-decision",
+      "from": "predict",
+      "to": "decision",
+      "label": "",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "command-mqttOut",
+      "from": "command",
+      "to": "mqttOut",
+      "label": "",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "mqttOut-gate",
+      "from": "mqttOut",
+      "to": "gate",
+      "label": "",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "pump-measure",
+      "from": "pump",
+      "to": "measure",
+      "label": "",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "measure-records",
+      "from": "measure",
+      "to": "records",
+      "label": "",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "records-dashboard",
+      "from": "records",
+      "to": "dashboard",
+      "label": "",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "decision-command",
+      "from": "decision",
+      "to": "command",
+      "label": "",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "gate-pump",
+      "from": "gate",
+      "to": "pump",
+      "label": "",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "decision-wait",
+      "from": "decision",
+      "to": "wait",
+      "label": "Não necessário",
+      "variant": "dashed"
+    },
+    {
+      "id": "gate-blocked",
+      "from": "gate",
+      "to": "blocked",
+      "label": "",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "readings-decision",
+      "from": "readings",
+      "to": "decision",
+      "label": "T1 / T2",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "left",
+      "via": [
+        [
+          100,
+          680
+        ],
+        [
+          100,
+          960
+        ]
+      ]
+    },
+    {
+      "id": "mqttIn-buffer",
+      "from": "mqttIn",
+      "to": "buffer",
+      "label": "Sem rede",
+      "variant": "dashed"
+    },
+    {
+      "id": "buffer-fallback",
+      "from": "buffer",
+      "to": "fallback",
+      "label": "Contingência",
+      "variant": "dashed"
+    },
+    {
+      "id": "fallback-gate",
+      "from": "fallback",
+      "to": "gate",
+      "label": "Pedido local",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "left",
+      "via": [
+        [
+          1070,
+          20
+        ],
+        [
+          40,
+          20
+        ],
+        [
+          40,
+          1380
+        ]
+      ]
+    },
+    {
+      "id": "fallback-resume",
+      "from": "fallback",
+      "to": "resume",
+      "label": "Rede retomada",
+      "variant": "dashed"
+    },
+    {
+      "id": "resume-ingest",
+      "from": "resume",
+      "to": "ingest",
+      "label": "Reenvio",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "right"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Um ESP32 · um vaso · uma bomba",
+      "items": [
+        "T1: horários e volumes fixos. T2: limiar com histerese. T3: previsão e regras determinísticas.",
+        "O modelo não liga a bomba. As proteções do ESP32 têm prioridade."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Funcionamento previsto em docs/mvp.md",
+      "items": [
+        "Base de ingestão verificada com simulação. Firmware, controle físico e ML ainda pendentes.",
+        "Bomba desligada no boot, duração máxima e watchdog. ACK MQTT não comprova atuação.",
+        "Pesagem mede retirada do reservatório; energia cobre o ramo da bomba."
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Preparação e retorno",
+      "items": [
+        "Treinar antes, com dados físicos e validação temporal; usar artefato versionado na inferência.",
+        "Após o ciclo, nova aquisição. O painel observa o sistema; não dispara a coleta.",
+        "UI do visualizador em inglês; conteúdo do fluxo em português."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Eventos e recorrência",
+      "items": [
+        "Rejeição ou decisão de não irrigar também gera registro de motivo no PostgreSQL.",
+        "Aceitação, rejeição, início e conclusão retornam por MQTT. Após cada ciclo, o ESP32 coleta novamente."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,567 @@
+{
+  "uid": "tcc-ingestion",
+  "title": "TCC — três vasos, ensaio contínuo",
+  "description": "30 dias contínuos. n=1 por tratamento. Quinzenas são períodos, não réplicas. Simulação não é resultado físico.",
+  "schemaVersion": 39,
+  "version": 3,
+  "refresh": "10s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "source",
+        "label": "Origem dos dados",
+        "type": "custom",
+        "query": "physical,simulation",
+        "current": {
+          "text": "physical",
+          "value": "physical"
+        },
+        "options": [
+          {
+            "text": "physical",
+            "value": "physical",
+            "selected": true
+          },
+          {
+            "text": "simulation",
+            "value": "simulation",
+            "selected": false
+          }
+        ]
+      },
+      {
+        "name": "experiment",
+        "label": "Experimento",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "irrigation-postgres"
+        },
+        "query": "SELECT DISTINCT experiment_id AS __text, experiment_id AS __value FROM telemetry WHERE source = ${source:sqlstring} ORDER BY 1",
+        "refresh": 1,
+        "current": {
+          "text": "tcc-2026",
+          "value": "tcc-2026"
+        }
+      },
+      {
+        "name": "period",
+        "label": "Período de análise (não réplica)",
+        "type": "custom",
+        "query": "total,primeira_metade,segunda_metade",
+        "current": {
+          "text": "total",
+          "value": "total"
+        },
+        "options": [
+          {
+            "text": "total",
+            "value": "total",
+            "selected": true
+          },
+          {
+            "text": "primeira_metade",
+            "value": "primeira_metade",
+            "selected": false
+          },
+          {
+            "text": "segunda_metade",
+            "value": "segunda_metade",
+            "selected": false
+          }
+        ]
+      },
+      {
+        "name": "inicio",
+        "label": "Início do ensaio físico (ISO, São Paulo)",
+        "type": "textbox",
+        "query": "2026-11-15T00:00:00-03:00",
+        "current": {
+          "text": "2026-11-15T00:00:00-03:00",
+          "value": "2026-11-15T00:00:00-03:00"
+        },
+        "options": [
+          {
+            "text": "2026-11-15T00:00:00-03:00",
+            "value": "2026-11-15T00:00:00-03:00",
+            "selected": true
+          }
+        ]
+      },
+      {
+        "name": "fim",
+        "label": "Fim do ensaio físico (ISO, São Paulo)",
+        "type": "textbox",
+        "query": "2026-12-01T00:00:00-03:00",
+        "current": {
+          "text": "2026-12-01T00:00:00-03:00",
+          "value": "2026-12-01T00:00:00-03:00"
+        },
+        "options": [
+          {
+            "text": "2026-12-01T00:00:00-03:00",
+            "value": "2026-12-01T00:00:00-03:00",
+            "selected": true
+          }
+        ]
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "Identificação",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "Origem **$source**, experimento **$experiment**. Três vasos, **n=1 por tratamento**; resultados descritivos. Fonte física: janela **$inicio → $fim** (ajuste nas variáveis ao iniciar o ensaio; duração real pode ser menor que 30 dias por decisão de 04/11). Metades são períodos de análise, não réplicas. A seção \"ao vivo\" mostra leituras brutas da bancada antes da calibração; simulação não comprova economia."
+      }
+    },
+    {
+      "id": 101,
+      "type": "stat",
+      "title": "Última mensagem recebida (segundos atrás)",
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "description": "Telemetria a cada 60 s. Acima de 180 s: verificar Wi-Fi, IP do notebook ou alimentação do ESP32.",
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 6,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 180
+              },
+              {
+                "color": "red",
+                "value": 300
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "datasource": {
+            "type": "postgres",
+            "uid": "irrigation-postgres"
+          },
+          "rawSql": "SELECT EXTRACT(EPOCH FROM now()-max(received_at)) AS segundos FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring}"
+        }
+      ]
+    },
+    {
+      "id": 102,
+      "type": "timeseries",
+      "title": "Solo — leitura bruta do ADC por vaso (sem calibração; maior = mais seco)",
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 3,
+        "w": 18,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "spanNulls": false,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT collected_at AS time, unit_id AS metric, (payload->>'soil_raw')::int AS value FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring} AND $__timeFilter(collected_at) ORDER BY 1",
+          "datasource": {
+            "type": "postgres",
+            "uid": "irrigation-postgres"
+          }
+        }
+      ]
+    },
+    {
+      "id": 103,
+      "type": "timeseries",
+      "title": "Balança compartilhada — massa (g, calibração provisória; deriva não corrigida)",
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 12,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "spanNulls": false,
+            "showPoints": "never"
+          },
+          "unit": "massg"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT collected_at AS time, (payload->>'reservoir_mass_g')::float AS massa_g FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring} AND unit_id=(SELECT min(unit_id) FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring}) AND $__timeFilter(collected_at) ORDER BY 1",
+          "datasource": {
+            "type": "postgres",
+            "uid": "irrigation-postgres"
+          }
+        }
+      ]
+    },
+    {
+      "id": 104,
+      "type": "timeseries",
+      "title": "Ambiente — DHT22 (bancada)",
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 9,
+        "w": 12,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "spanNulls": false,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT collected_at AS time, (payload->>'temperature_c')::float AS temperatura_c, (payload->>'humidity_pct')::float AS umidade_pct FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring} AND unit_id=(SELECT min(unit_id) FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring}) AND $__timeFilter(collected_at) ORDER BY 1",
+          "datasource": {
+            "type": "postgres",
+            "uid": "irrigation-postgres"
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Índice relativo calibrado do solo",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 16,
+        "h": 9
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "WITH sim AS (SELECT min(collected_at) AS first_at FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring}), anchor AS (SELECT CASE WHEN ${source:sqlstring}='physical' THEN ${inicio:sqlstring}::timestamptz ELSE first_at END AS start_at, CASE WHEN ${source:sqlstring}='physical' THEN ${fim:sqlstring}::timestamptz ELSE first_at+interval '30 days' END AS stop_at FROM sim), bounds AS (SELECT CASE WHEN ${period:sqlstring}='segunda_metade' THEN start_at+(stop_at-start_at)/2 ELSE start_at END AS begin_at, CASE WHEN ${period:sqlstring}='primeira_metade' THEN start_at+(stop_at-start_at)/2 ELSE stop_at END AS end_at FROM anchor) SELECT collected_at AS time, soil_index AS value, unit_id || ' / ' || treatment AS metric FROM telemetry CROSS JOIN bounds WHERE source = ${source:sqlstring} AND experiment_id = ${experiment:sqlstring} AND sensor_valid AND collected_at>=begin_at AND collected_at<end_at AND $__timeFilter(collected_at) ORDER BY collected_at"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Mensagens únicas persistidas na janela",
+      "gridPos": {
+        "x": 16,
+        "y": 16,
+        "w": 8,
+        "h": 9
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "WITH sim AS (SELECT min(collected_at) AS first_at FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring}), anchor AS (SELECT CASE WHEN ${source:sqlstring}='physical' THEN ${inicio:sqlstring}::timestamptz ELSE first_at END AS start_at, CASE WHEN ${source:sqlstring}='physical' THEN ${fim:sqlstring}::timestamptz ELSE first_at+interval '30 days' END AS stop_at FROM sim), bounds AS (SELECT CASE WHEN ${period:sqlstring}='segunda_metade' THEN start_at+(stop_at-start_at)/2 ELSE start_at END AS begin_at, CASE WHEN ${period:sqlstring}='primeira_metade' THEN start_at+(stop_at-start_at)/2 ELSE stop_at END AS end_at FROM anchor) SELECT count(*) AS messages FROM telemetry CROSS JOIN bounds WHERE source = ${source:sqlstring} AND experiment_id = ${experiment:sqlstring} AND collected_at>=begin_at AND collected_at<end_at AND $__timeFilter(collected_at)"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Comandos e confirmações",
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "WITH sim AS (SELECT min(collected_at) AS first_at FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring}), anchor AS (SELECT CASE WHEN ${source:sqlstring}='physical' THEN ${inicio:sqlstring}::timestamptz ELSE first_at END AS start_at, CASE WHEN ${source:sqlstring}='physical' THEN ${fim:sqlstring}::timestamptz ELSE first_at+interval '30 days' END AS stop_at FROM sim), bounds AS (SELECT CASE WHEN ${period:sqlstring}='segunda_metade' THEN start_at+(stop_at-start_at)/2 ELSE start_at END AS begin_at, CASE WHEN ${period:sqlstring}='primeira_metade' THEN start_at+(stop_at-start_at)/2 ELSE stop_at END AS end_at FROM anchor) SELECT c.issued_at, c.payload->>'unit_id' AS vaso, c.payload->>'treatment' AS tratamento, c.status, c.payload->>'reason' AS motivo, c.command_id FROM commands c CROSS JOIN bounds WHERE c.source = ${source:sqlstring} AND c.payload->>'experiment_id' = ${experiment:sqlstring} AND c.issued_at>=begin_at AND c.issued_at<end_at AND $__timeFilter(c.issued_at) ORDER BY c.issued_at DESC LIMIT 100"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Água retirada e energia por ciclo confirmado",
+      "gridPos": {
+        "x": 0,
+        "y": 33,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "WITH sim AS (SELECT min(collected_at) AS first_at FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring}), anchor AS (SELECT CASE WHEN ${source:sqlstring}='physical' THEN ${inicio:sqlstring}::timestamptz ELSE first_at END AS start_at, CASE WHEN ${source:sqlstring}='physical' THEN ${fim:sqlstring}::timestamptz ELSE first_at+interval '30 days' END AS stop_at FROM sim), bounds AS (SELECT CASE WHEN ${period:sqlstring}='segunda_metade' THEN start_at+(stop_at-start_at)/2 ELSE start_at END AS begin_at, CASE WHEN ${period:sqlstring}='primeira_metade' THEN start_at+(stop_at-start_at)/2 ELSE stop_at END AS end_at FROM anchor) SELECT e.occurred_at, c.payload->>'unit_id' AS vaso, c.payload->>'treatment' AS tratamento, e.payload->>'volume_ml' AS agua_ml, e.payload->>'energy_wh' AS energia_wh, e.payload->>'measurements_valid' AS medicao_valida, e.payload->>'reason' AS motivo FROM command_events e JOIN commands c USING(command_id) CROSS JOIN bounds WHERE c.source = ${source:sqlstring} AND c.payload->>'experiment_id' = ${experiment:sqlstring} AND e.status IN ('completed','failed') AND e.occurred_at>=begin_at AND e.occurred_at<end_at AND $__timeFilter(e.occurred_at) ORDER BY e.occurred_at DESC LIMIT 100"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "Decisões e uso do modelo",
+      "gridPos": {
+        "x": 0,
+        "y": 41,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "WITH sim AS (SELECT min(collected_at) AS first_at FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring}), anchor AS (SELECT CASE WHEN ${source:sqlstring}='physical' THEN ${inicio:sqlstring}::timestamptz ELSE first_at END AS start_at, CASE WHEN ${source:sqlstring}='physical' THEN ${fim:sqlstring}::timestamptz ELSE first_at+interval '30 days' END AS stop_at FROM sim), bounds AS (SELECT CASE WHEN ${period:sqlstring}='segunda_metade' THEN start_at+(stop_at-start_at)/2 ELSE start_at END AS begin_at, CASE WHEN ${period:sqlstring}='primeira_metade' THEN start_at+(stop_at-start_at)/2 ELSE stop_at END AS end_at FROM anchor) SELECT d.created_at, d.payload->>'reason' AS motivo, d.payload->>'actuate' AS irrigar, d.payload->>'prediction_id' AS previsao, d.payload->>'command_id' AS comando FROM decisions d JOIN telemetry t ON t.device_id=d.device_id AND t.message_id=(d.payload->>'telemetry_message_id')::uuid CROSS JOIN bounds WHERE t.source = ${source:sqlstring} AND t.experiment_id = ${experiment:sqlstring} AND d.created_at>=begin_at AND d.created_at<end_at AND $__timeFilter(d.created_at) ORDER BY d.created_at DESC LIMIT 100"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Consumo observado válido por vaso — sem preencher ausências",
+      "gridPos": {
+        "x": 0,
+        "y": 49,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "WITH sim AS (SELECT min(collected_at) AS first_at FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring}), anchor AS (SELECT CASE WHEN ${source:sqlstring}='physical' THEN ${inicio:sqlstring}::timestamptz ELSE first_at END AS start_at, CASE WHEN ${source:sqlstring}='physical' THEN ${fim:sqlstring}::timestamptz ELSE first_at+interval '30 days' END AS stop_at FROM sim), bounds AS (SELECT CASE WHEN ${period:sqlstring}='segunda_metade' THEN start_at+(stop_at-start_at)/2 ELSE start_at END AS begin_at, CASE WHEN ${period:sqlstring}='primeira_metade' THEN start_at+(stop_at-start_at)/2 ELSE stop_at END AS end_at FROM anchor), cycles AS (SELECT e.command_id,e.occurred_at,c.payload->>'unit_id' AS unit_id,c.payload->>'treatment' AS treatment,e.payload FROM command_events e JOIN commands c USING(command_id) WHERE c.source=${source:sqlstring} AND c.payload->>'experiment_id'=${experiment:sqlstring} AND e.status IN ('completed','failed') UNION ALL SELECT command_id,occurred_at,payload->>'unit_id',payload->>'treatment',payload FROM local_cycle_events WHERE payload->>'source'=${source:sqlstring} AND payload->>'experiment_id'=${experiment:sqlstring} AND status IN ('completed','failed')) SELECT unit_id AS vaso,treatment AS tratamento,count(*) AS ciclos_com_resultado,count(*) FILTER(WHERE NOT coalesce((payload->>'measurements_valid')::boolean,false) OR payload->>'volume_ml' IS NULL OR payload->>'energy_wh' IS NULL) AS ciclos_sem_medicao,sum((payload->>'volume_ml')::float) FILTER(WHERE (payload->>'measurements_valid')::boolean) AS agua_valida_observada_ml,sum((payload->>'energy_wh')::float) FILTER(WHERE (payload->>'measurements_valid')::boolean) AS energia_valida_observada_wh FROM cycles,bounds WHERE occurred_at>=begin_at AND occurred_at<end_at AND $__timeFilter(occurred_at) GROUP BY unit_id,treatment ORDER BY treatment"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Leituras e cobertura por vaso — períodos não são réplicas",
+      "gridPos": {
+        "x": 0,
+        "y": 57,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "WITH sim AS (SELECT min(collected_at) AS first_at FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring}), anchor AS (SELECT CASE WHEN ${source:sqlstring}='physical' THEN ${inicio:sqlstring}::timestamptz ELSE first_at END AS start_at, CASE WHEN ${source:sqlstring}='physical' THEN ${fim:sqlstring}::timestamptz ELSE first_at+interval '30 days' END AS stop_at FROM sim), bounds AS (SELECT CASE WHEN ${period:sqlstring}='segunda_metade' THEN start_at+(stop_at-start_at)/2 ELSE start_at END AS begin_at, CASE WHEN ${period:sqlstring}='primeira_metade' THEN start_at+(stop_at-start_at)/2 ELSE stop_at END AS end_at FROM anchor) SELECT t.unit_id AS vaso,t.treatment AS tratamento,count(*) AS leituras,count(*) FILTER(WHERE sensor_valid) AS leituras_validas,count(DISTINCT floor(extract(epoch FROM(t.collected_at-b.begin_at))/60)) FILTER(WHERE sensor_valid) AS minutos_com_leitura_valida,100.0*count(*) FILTER(WHERE sensor_valid)/nullif(count(*),0) AS percentual_validas_observadas FROM telemetry t CROSS JOIN bounds b WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring} AND collected_at>=begin_at AND collected_at<end_at AND $__timeFilter(collected_at) GROUP BY t.unit_id,t.treatment ORDER BY t.treatment"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Ciclos locais, contingência e falhas",
+      "gridPos": {
+        "x": 0,
+        "y": 65,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT occurred_at,payload->>'unit_id' AS vaso,payload->>'treatment' AS tratamento,status,payload->>'reason' AS motivo,command_id FROM local_cycle_events WHERE payload->>'source'=${source:sqlstring} AND payload->>'experiment_id'=${experiment:sqlstring} AND $__timeFilter(occurred_at) ORDER BY occurred_at DESC LIMIT 100"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "table",
+      "title": "Intervenções e reposições — registro auditável",
+      "gridPos": {
+        "x": 0,
+        "y": 73,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT started_at,ended_at,unit_id AS vaso,kind AS tipo,status,payload->>'reason' AS motivo,payload->>'responsible' AS responsavel FROM interventions WHERE payload->>'source'=${source:sqlstring} AND experiment_id=${experiment:sqlstring} AND $__timeFilter(started_at) ORDER BY started_at DESC LIMIT 100"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Comandos sem resultado terminal — verificar antes de concluir consumo",
+      "gridPos": {
+        "x": 0,
+        "y": 81,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT issued_at,payload->>'unit_id' AS vaso,payload->>'treatment' AS tratamento,status,command_id FROM commands WHERE source=${source:sqlstring} AND payload->>'experiment_id'=${experiment:sqlstring} AND status IN('queued','published','accepted','started','expired') AND $__timeFilter(issued_at) ORDER BY issued_at DESC LIMIT 100"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Rejeições e falhas de transporte — por dispositivo",
+      "gridPos": {
+        "x": 0,
+        "y": 89,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT received_at,topic,reason FROM rejected_messages WHERE split_part(topic,'/',3) IN(SELECT DISTINCT device_id FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring}) AND $__timeFilter(received_at) ORDER BY received_at DESC LIMIT 100"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "table",
+      "title": "T3: erro da previsão de 30 min — pares válidos e alvos ausentes",
+      "gridPos": {
+        "x": 0,
+        "y": 97,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "irrigation-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "WITH sim AS (SELECT min(collected_at) AS first_at FROM telemetry WHERE source=${source:sqlstring} AND experiment_id=${experiment:sqlstring}), anchor AS (SELECT CASE WHEN ${source:sqlstring}='physical' THEN ${inicio:sqlstring}::timestamptz ELSE first_at END AS start_at, CASE WHEN ${source:sqlstring}='physical' THEN ${fim:sqlstring}::timestamptz ELSE first_at+interval '30 days' END AS stop_at FROM sim), bounds AS (SELECT CASE WHEN ${period:sqlstring}='segunda_metade' THEN start_at+(stop_at-start_at)/2 ELSE start_at END AS begin_at, CASE WHEN ${period:sqlstring}='primeira_metade' THEN start_at+(stop_at-start_at)/2 ELSE stop_at END AS end_at FROM anchor) SELECT base.unit_id AS vaso,p.payload->>'model_version' AS modelo,count(*) AS previsoes,count(obs.soil_index) AS pares_validos,count(*)-count(obs.soil_index) AS alvos_ausentes,avg(abs((p.payload->>'soil_index')::float-obs.soil_index)) AS mae,sqrt(avg(power((p.payload->>'soil_index')::float-obs.soil_index,2))) AS rmse,avg(abs(base.soil_index-obs.soil_index)) AS mae_persistencia FROM predictions p JOIN telemetry base ON base.device_id=p.device_id AND base.message_id=(p.payload->>'telemetry_message_id')::uuid CROSS JOIN bounds LEFT JOIN LATERAL(SELECT t.soil_index FROM telemetry t WHERE t.device_id=base.device_id AND t.unit_id=base.unit_id AND t.experiment_id=base.experiment_id AND t.source=base.source AND t.payload->>'calibration_id'=base.payload->>'calibration_id' AND t.sensor_valid AND t.collected_at>=base.collected_at+interval '30 minutes' AND t.collected_at<=base.collected_at+interval '31 minutes' AND t.collected_at<bounds.end_at ORDER BY t.collected_at LIMIT 1) obs ON true WHERE base.source=${source:sqlstring} AND base.experiment_id=${experiment:sqlstring} AND base.treatment='T3' AND base.collected_at>=begin_at AND base.collected_at<end_at AND $__timeFilter(base.collected_at) GROUP BY base.unit_id,p.payload->>'model_version' ORDER BY base.unit_id"
+        }
+      ]
+    }
+  ]
+}

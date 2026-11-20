@@ -1,0 +1,13 @@
+menu "Irrigation MVP"
+config IRRIGATION_SIMULATION
+    bool "Run explicit synthetic fixtures (no physical GPIO)"
+    default n
+    help
+        Synthetic input only. Requires sim- device and experiment identities.
+config IRRIGATION_PHYSICAL_ENABLED
+    bool "Enable physical actuation (unavailable until hardware validation)"
+    default n
+    help
+        No physical drivers or validated circuit configuration exist yet.
+        Selecting this option intentionally fails compilation.
+endmenu

@@ -1,0 +1,24 @@
+user backend
+topic read irrigation/v1/+/telemetry
+topic read irrigation/v1/+/events
+topic write irrigation/v1/sim-01/commands
+topic write irrigation/v1/esp32-01/commands
+topic write irrigation/v1/esp32-01/reservoir
+topic write irrigation/v1/esp32-01/manual
+topic read irrigation/v1/esp32-01/manual_result
+topic write irrigation/v1/+/heartbeat
+
+user sim-01
+topic write irrigation/v1/sim-01/telemetry
+topic write irrigation/v1/sim-01/events
+topic read irrigation/v1/sim-01/commands
+topic read irrigation/v1/sim-01/heartbeat
+
+user esp32-01
+topic write irrigation/v1/esp32-01/telemetry
+topic write irrigation/v1/esp32-01/events
+topic read irrigation/v1/esp32-01/commands
+topic read irrigation/v1/esp32-01/heartbeat
+topic read irrigation/v1/esp32-01/reservoir
+topic read irrigation/v1/esp32-01/manual
+topic write irrigation/v1/esp32-01/manual_result

@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS control_configs (device_id text PRIMARY KEY, payload jsonb NOT NULL, updated_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS predictions (prediction_id uuid PRIMARY KEY, device_id text NOT NULL, predicted_at timestamptz NOT NULL, payload jsonb NOT NULL);
+CREATE TABLE IF NOT EXISTS decisions (request_id uuid PRIMARY KEY, device_id text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), payload jsonb NOT NULL);
+CREATE TABLE IF NOT EXISTS commands (command_id uuid PRIMARY KEY, device_id text NOT NULL, source text NOT NULL, issued_at timestamptz NOT NULL, expires_at timestamptz NOT NULL, status text NOT NULL DEFAULT 'queued', payload jsonb NOT NULL);
+CREATE INDEX IF NOT EXISTS commands_device_time ON commands(device_id, issued_at);
+CREATE TABLE IF NOT EXISTS command_outbox (command_id uuid PRIMARY KEY REFERENCES commands(command_id), published_at timestamptz, attempts integer NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS command_events (event_id uuid PRIMARY KEY, command_id uuid NOT NULL REFERENCES commands(command_id), occurred_at timestamptz NOT NULL, status text NOT NULL, payload jsonb NOT NULL);
+CREATE TABLE IF NOT EXISTS local_cycle_events (event_id uuid PRIMARY KEY, command_id uuid NOT NULL, device_id text NOT NULL, occurred_at timestamptz NOT NULL, status text NOT NULL, payload jsonb NOT NULL);
+CREATE INDEX IF NOT EXISTS local_cycle_device_time ON local_cycle_events(device_id,occurred_at);
+CREATE TABLE IF NOT EXISTS rejected_messages (rejection_id bigserial PRIMARY KEY, topic text NOT NULL, received_at timestamptz NOT NULL DEFAULT now(), reason text NOT NULL, payload bytea NOT NULL);
+ALTER TABLE command_events ADD COLUMN IF NOT EXISTS received_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE local_cycle_events ADD COLUMN IF NOT EXISTS received_at timestamptz NOT NULL DEFAULT now();

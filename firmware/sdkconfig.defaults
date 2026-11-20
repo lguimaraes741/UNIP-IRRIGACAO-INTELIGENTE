@@ -1,0 +1,13 @@
+CONFIG_ESP_TASK_WDT_EN=y
+CONFIG_ESP_TASK_WDT_INIT=y
+# 15 s: publish can block on a TLS reconnect (two TASK_WDT resets on 13/11 at 5 s).
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=15
+CONFIG_ESP_TASK_WDT_PANIC=y
+CONFIG_IRRIGATION_PHYSICAL_ENABLED=n
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+# Main loop builds JSON, reads the sensor snapshot and runs the controller (overflowed 3584 on 06/11).
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+# Report MQTT outbox drops so the app never waits forever for a PUBACK (outages 07-10/11).
+CONFIG_MQTT_REPORT_DELETED_MESSAGES=y
